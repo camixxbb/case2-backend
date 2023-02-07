@@ -4,9 +4,9 @@ export default class User extends ApplicationModel {
     id; email; encryptedPassword; authToken;
 
     static configurar() {
-        User.associate('id', 'ID')
-        User.associate('email', 'EMAIL')
-        User.associate('encryptedPassword', 'ENCRYPTED_PASSWORD')
-        User.associate('authToken', 'AUTH_TOKEN')
+        User.associar('id', 'ID')
+        User.associar('email', 'EMAIL')
+        User.associar('encryptedPassword', 'ENCRYPTED_PASSWORD')
+        User.associar('authToken', 'AUTH_TOKEN')
     }
 }

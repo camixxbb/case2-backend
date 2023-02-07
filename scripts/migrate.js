@@ -1,8 +1,8 @@
-import Page from "../src/model/Page.js"
-import Product from "../src/model/Product.js"
-import User from "../src/model/User.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-(async () => {
+const migrate = async () => {
     await Page._migrate([
         '"ID" INTEGER PRIMARY KEY NOT NULL',
         '"TITLE" TEXT NOT NULL',
@@ -19,4 +19,6 @@ import User from "../src/model/User.js"
         '"ENCRYPTED_PASSWORD" TEXT NOT NULL',
         '"AUTH_TOKEN" TEXT'
     ])
-})()
+}
+
+migrate()

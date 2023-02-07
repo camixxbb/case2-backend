@@ -1,11 +1,14 @@
 import { hashSync } from "bcrypt"
-import { models } from "../src/model/models.js"
 
-import Page from "../src/model/Page.js"
-import Product from "../src/model/Product.js"
-import User from "../src/model/User.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-(async () => {
+const models = [
+    Page, Product, User
+]
+
+const seed = async () => {
     models.forEach(model => model.configure())
 
     const page = new Page()
@@ -29,4 +32,6 @@ import User from "../src/model/User.js"
     await Page._seed(pages)
     await Product._seed(products)
     await User._seed(users)
-})()
+}
+
+seed()

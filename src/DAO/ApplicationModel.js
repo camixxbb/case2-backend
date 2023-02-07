@@ -61,11 +61,11 @@ export default class ApplicationModel {
         return this.name.toLowerCase()
     }
 
-    static configure() {
-        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
+    static configurar() {
+        throw new Error('Você deve criar sua própria versão de SuaModel.configurar! Dentro dela chame o método "SuaModel.associar" para relacionar as propriedades da model com as colunas do banco!')
     }
 
-    static associate( property, column ) {
+    static associar( property, column ) {
         this._propertyToColumn.set(property, column)
         this._columnToProperty.set(column, property)
     }

@@ -90,7 +90,6 @@ Se você executar `npm start`, você verá que o projeto estará funcionando e r
 Precisamos separar no nosso projeto nos endereços nos quais vamos buscar os dados e como nós vamos lidar com esses pedidos. Para isso, vamos criar uma camada no nosso projeto: as controllers. Elas vão orquestrar as responsabilidades de outras camadas do nosso projeto: vão receber o pedido, repassar as informações para validadores, pedir informações para fábricas e modelos de dados e devolver as informações para o usuário.
 
 Vamos criar os seguintes arquivos:
-- `src/controller/controllers.js`: Será o local onde iremos registrar todas as nossas controllers para que suas configurações sejam aplicadas de uma vez só
 - `src/controller/PageController.js`: Vai cuidar dos pedidos de criação, leitura, atualização e exclusão de informações de uma página específica
 - `src/controller/ProductController.js`: Vai cuidar dos pedidos de criação, leitura, atualização e exclusão de informações de uma funcionalidade específica
 - `src/controller/UserController.js`: Vai cuidar dos pedidos de login na plataforma
@@ -98,10 +97,6 @@ Vamos criar os seguintes arquivos:
 Vamos começar pela `src/controller/UserController.js` e montar um pseudocódigo para nos auxiliar a montar a estrutura do arquivo:
 
 ```js
-import { compareSync } from "bcrypt"
-import { randomUUID } from 'crypto'
-import User from "../model/User.js"
-
 export default class UserController {
     static routes(app) {
         // Aqui informaremos qual método responderá à rota de login
@@ -236,13 +231,13 @@ export default class PageController {
 ```js
 export default class ProductController {
     static routes(app) {
-        app.post('/produtos', ProductController.create)
+        app.post('/produtos', ProductController.inserir)
         app.get('/produtos', ProductController.listarTodos)
         app.patch('/produtos/:id', ProductController.atualizar)
         app.delete('/produtos/:id', ProductController.deletar)
     }
 
-    static async create(req, res) {
+    static async inserir(req, res) {
         const { title, description } = req.body
         if (!title || !description) {
             return res.status(400).send({
@@ -322,7 +317,7 @@ export default class ProductController {
 }
 ```
 
-Para finalizar, atualize o seu `src/app.js` importando a lista de controllers, O seu arquivo ficará assim:
+Para finalizar, atualize o seu `src/app.js` importando a lista de controllers. O seu arquivo ficará assim:
 
 ```js
 import cors from "cors";
@@ -352,7 +347,7 @@ Desta forma, todas as controllers conseguem configurar suas rotas! Faça o teste
 
 O nosso próximo passo é conectar o nosso servidor a um banco de dados. Afinal, queremos que nossas informações sejam mantidas mesmo que a aplicação lance algum erro ou seja reiniciada.
 
-Vamos trabalhar com uma nova camada, as **models**. Em alguns projetos deixaríamos esse trabalho para os DAOs (Data Access Objects) para acessar o banco de dados e nos devolver models criadas. Porém, gostaria de trazer uma visão mais parecida com a de algumas bibliotecas de back-end que facilitam o relacionamento de modelos de dados com o banco em si. Essas bibliotecas usam a técnica ORM (Object Relational Mapping), que aproveita as vantagens da programação orientação a objetos para mapear objetos de uma determinada linguagem de programação para uma tabela no banco com suas respectivas colunas. A model nesse formato possui métodos de fabricação, busca, deleção e atualização de dados e envolve todas essas funcionalidades em suas classes. Um exemplo de biblioteca famosa de ORM para JavaScript é o Sequelize.
+Vamos trabalhar com uma nova camada, as **models**. Neste projeto elas fazem o trabalho dos DAOs (Data Access Objects) já que elas também vão acessar o banco de dados e nos devolver models criadas. Vamos trazer uma visão mais parecida com a de algumas bibliotecas de back-end que facilitam o relacionamento de modelos de dados com o banco em si. Essas bibliotecas usam a técnica ORM (Object Relational Mapping), que aproveita as vantagens da programação orientação a objetos para mapear objetos de uma determinada linguagem de programação para uma tabela no banco com suas respectivas colunas. A model nesse formato possui métodos de fabricação, busca, deleção e atualização de dados e envolve todas essas funcionalidades em suas classes. Um exemplo de biblioteca famosa de ORM para JavaScript é o Sequelize.
 
 Até o final deste passo 4 você terá duas opções:
 1. Tomar a liberdade de instalar uma biblioteca e criar as models a partir de sua documentação, ou
@@ -382,7 +377,7 @@ const today = new Date()
 const year = today.getFullYear() // Devolve o ano de uma data (precisa que um objeto do tipo Date exista para ser chamado)
 ```
 
-Com essa revisão rápida de métodos estáticos, vamos criar nossa model genérica: Ela representará uma entidade (tabela) no nosso banco de dados. Crie o arquivo `src/model/ApplicationModel.js` com o conteúdo abaixo:
+Com essa revisão rápida de métodos estáticos, vamos criar nossa model genérica: Ela representará uma entidade (tabela) no nosso banco de dados. Crie o arquivo `src/DAO/ApplicationModel.js` com o conteúdo abaixo:
 ```js
 export default class ApplicationModel {
     static getTableName() {
@@ -394,7 +389,7 @@ export default class ApplicationModel {
 > Dica: No exemplo acima, a palavra chave *this* referencia a classe construtora pois estamos em um método estático e não uma instância dessa classe. Desta forma, como classes são do tipo "function", elas possuem a propriedade "name" que permite acessar o nome da classe
 
 Agora, crie as outras 3 models do nosso projeto (página, produto e usuário) nos seguintes arquivos:
-`src/model/Page.js`
+`src/DAO/Page.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -403,7 +398,7 @@ export default class Page extends ApplicationModel {
 }
 ```
 
-`src/model/Product.js`
+`src/DAO/Product.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -412,7 +407,7 @@ export default class Product extends ApplicationModel {
 }
 ```
 
-`src/model/User.js`
+`src/DAO/User.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -450,17 +445,17 @@ Ao fazer uma busca de um objeto no banco, informaremos qual o campo da classe go
 
 Para poder realizar as traduções precisaremos guardar a tabela de tradução. Para isso, vou utilizar duas estruturas de dados do tipo `Map`: uma para traduzir nomes de propriedades para colunas e o outro para guardar o sentido contrário da tradução. Além disso, criaremos um método para associar essas duas informações de uma vez só e um método obrigatório para configurar todas as models:
 
-`src/model/ApplicationModel.js`
+`src/DAO/ApplicationModel.js`
 ```js
 export default class ApplicationModel {
     static _propertyToColumn = new Map()
     static _columnToProperty = new Map()
 
     static configurar() {
-        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
+        throw new Error('Você deve criar sua própria versão de SuaModel.configurar! Dentro dela chame o método "SuaModel.associar" para relacionar as propriedades da model com as colunas do banco!')
     }
 
-    static associate( property, column ) {
+    static associar( property, column ) {
         this._propertyToColumn.set(property, column)
         this._columnToProperty.set(column, property)
     }
@@ -473,7 +468,7 @@ export default class ApplicationModel {
 
 Desta forma, podemos criar as propriedades nas nossas models e associar com as colunas do banco em cada uma das classes:
 
-`src/model/Page.js`
+`src/DAO/Page.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -481,14 +476,14 @@ export default class Page extends ApplicationModel {
     id; title; text;
 
     static configurar() {
-        Page.associate('id', 'ID')
-        Page.associate('title', 'TITLE')
-        Page.associate('text', 'TEXT')
+        Page.associar('id', 'ID')
+        Page.associar('title', 'TITLE')
+        Page.associar('text', 'TEXT')
     }
 }
 ```
 
-`src/model/Product.js`
+`src/DAO/Product.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -496,14 +491,14 @@ export default class Product extends ApplicationModel {
     id; title; description;
 
     static configurar() {
-        Product.associate('id', 'ID')
-        Product.associate('title', 'TITLE')
-        Product.associate('description', 'DESCRIPTION')
+        Product.associar('id', 'ID')
+        Product.associar('title', 'TITLE')
+        Product.associar('description', 'DESCRIPTION')
     }
 }
 ```
 
-`src/model/User.js`
+`src/DAO/User.js`
 ```js
 import ApplicationModel from "./ApplicationModel.js"
 
@@ -511,10 +506,10 @@ export default class User extends ApplicationModel {
     id; email; encryptedPassword; authToken;
 
     static configurar() {
-        User.associate('id', 'ID')
-        User.associate('email', 'EMAIL')
-        User.associate('encryptedPassword', 'ENCRYPTED_PASSWORD')
-        User.associate('authToken', 'AUTH_TOKEN')
+        User.associar('id', 'ID')
+        User.associar('email', 'EMAIL')
+        User.associar('encryptedPassword', 'ENCRYPTED_PASSWORD')
+        User.associar('authToken', 'AUTH_TOKEN')
     }
 }
 ```
@@ -576,10 +571,10 @@ export default class ApplicationModel {
     static _columnToProperty = new Map()
 
     static configurar() {
-        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
+        throw new Error('Você deve criar sua própria versão de SuaModel.configurar! Dentro dela chame o método "SuaModel.associar" para relacionar as propriedades da model com as colunas do banco!')
     }
 
-    static associate( property, column ) {
+    static associar( property, column ) {
         this._propertyToColumn.set(property, column)
         this._columnToProperty.set(column, property)
     }
@@ -616,7 +611,7 @@ export default class ApplicationModel {
 }
 ```
 
-Se você colocar temporariamente esse trecho de código no final do seu arquivo `src/model/User.js` para testar as configurações, verá que nossa tradução está funcionando!
+Se você colocar temporariamente esse trecho de código no final do seu arquivo `src/DAO/User.js` para testar as configurações, verá que nossa tradução está funcionando!
 
 ```js
 User.configurar()
@@ -691,7 +686,7 @@ Geralmente quando iniciamos um projeto queremos pelo menos alguns dados populado
 
 Vamos aproveitar a nossa model genérica e criar os três primeiros métodos (o seed deixaremos para depois):
 
-`src/model/ApplicationModel.js`
+`src/DAO/ApplicationModel.js`
 ```js
 // Fora da classe...
 import { getConnection } from "../database/connection.js"
@@ -724,29 +719,45 @@ Vamos criar três arquivos em uma nova pasta: `scripts/clear.js`, `scripts/drop.
 
 `scripts/clear.js`
 ```js
-import { models } from "../src/model/models.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-(async () => {
+const models = [
+    Page, Product, User
+]
+
+const clear = async () => {
     await Promise.all(models.map(model => model._clear()))
-})()
+}
+
+clear()
 ```
 
 `scripts/drop.js`
 ```js
-import { models } from "../src/model/models.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-(async () => {
+const models = [
+    Page, Product, User
+]
+
+const drop = async () => {
     await Promise.all(models.map(model => model._drop()))
-})()
+}
+
+drop()
 ```
 
 `scripts/migrate.js`
 ```js
-import Page from "../src/model/Page.js"
-import Product from "../src/model/Product.js"
-import User from "../src/model/User.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-(async () => {
+const migrate = async () => {
     await Page._migrate([
         '"ID" INTEGER PRIMARY KEY NOT NULL',
         '"TITLE" TEXT NOT NULL',
@@ -763,7 +774,9 @@ import User from "../src/model/User.js"
         '"ENCRYPTED_PASSWORD" TEXT NOT NULL',
         '"AUTH_TOKEN" TEXT'
     ])
-})()
+}
+
+migrate()
 ```
 
 Agora, no seu `package.json` adicione os seguintes dados dentro do campo `"scripts"`:
@@ -808,7 +821,7 @@ Já a atualização é feita quando essa model foi criada dentro de uma função
 
 De uma forma ou de outra, precisamos de pelo menos uma informação que vai diferenciar um dado de outro: uma chave primária! Para não aumentarmos mais ainda a complexidade, vamos assumir que todas as nossas models usam id como chave primária (no banco pode ser qualquer outra coisa, por exemplo `pk_cpf`, desde que faça a associação com o `id` na model depois). Vamos criar esse campo das instâncias e o método `save` para as instâncias também:
 
-`src/model/ApplicationModel.js`
+`src/DAO/ApplicationModel.js`
 ```js
     //...
 
@@ -829,7 +842,7 @@ De uma forma ou de outra, precisamos de pelo menos uma informação que vai dife
 
 Vamos implementar as funcionalidades do método `save` e entender o que está acontecendo:
 
-`src/model/ApplicationModel.js`
+`src/DAO/ApplicationModel.js`
 ```js
     //...
 
@@ -880,7 +893,7 @@ Vamos implementar as funcionalidades do método `save` e entender o que está ac
 
 Para testar que este método está funcionando, vamos criar o nosso último script auxiliar: `seed`!
 
-Na `src/model/ApplicationModel.js`, adicione junto aos outros métodos auxiliares:
+Na `src/DAO/ApplicationModel.js`, adicione junto aos outros métodos auxiliares:
 ```js
     // ...
 
@@ -898,15 +911,17 @@ Desta forma só precisamos informar um array de instâncias que todas elas serã
 Crie um arquivo `scripts/seed.js` e coloque o seguinte conteúdo:
 
 ```js
-import { models } from "../src/model/models.js"
+import Page from "../src/DAO/Page.js"
+import Product from "../src/DAO/Product.js"
+import User from "../src/DAO/User.js"
 
-import Page from "../src/model/Page.js"
-import Product from "../src/model/Product.js"
-import User from "../src/model/User.js"
+const models = [
+    Page, Product, User
+]
 
-(async () => {
+const seed = async () => {
     // Precisamos configurar as models antes das inserções para ter acesso à tabela de tradução
-    models.forEach(model => model.configure())
+    models.forEach(model => model.configurar())
 
     const page = new Page()
     page.title = 'Sobre'
@@ -929,7 +944,9 @@ import User from "../src/model/User.js"
     await Page._seed(pages)
     await Product._seed(products)
     await User._seed(users)
-})()
+}
+
+seed()
 ```
 
 Agora, adicione no campo `"script"` do seu `package.json` mais uma propriedade:
@@ -1019,7 +1036,7 @@ Com estes dois últimos métodos conseguimos implementar todos os métodos que f
 `src/controller/UserController.js`
 ```js
 // Fora da classe...
-import User from "../model/User.js"
+import User from "../DAO/User.js"
 
 // Dentro da classe...
     //...
@@ -1060,7 +1077,7 @@ import User from "../model/User.js"
 `src/controller/PageController.js`
 ```js
 // Fora da classe...
-import Page from "../model/Page.js"
+import Page from "../DAO/Page.js"
 
 // Dentro da classe...
     //...
@@ -1107,7 +1124,7 @@ import Page from "../model/Page.js"
 `src/controller/ProductController.js`
 ```js
 // Fora da classe...
-import Product from "../model/Product.js"
+import Product from "../DAO/Product.js"
 
 // Dentro da classe...
     //...
@@ -1189,7 +1206,7 @@ Para isso, vamos criar uma **middleware**. Uma **middleware** é uma função qu
 Crie o arquivo `src/middleware/authorization.js` e coloque o seguinte:
 
 ```js
-import User from "../model/User.js"
+import User from "../DAO/User.js"
 
 export const verificarToken = async (req, res, next) => {
     const token = req.headers['x-auth-token']
