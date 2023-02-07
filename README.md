@@ -354,8 +354,8 @@ export default app
 
 Desta forma, todas as controllers conseguem configurar suas rotas! Faça o teste das rotas pelo Postman, Insomnia ou alguma outra ferramenta para testar APIs (não se esqueça de iniciar o projeto com `npm start`). Exemplos:
 
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI GET localhost:3000/page/1
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI PATCH localhost:3000/product/2: `{ "description": "Nova descrição!" }` 
+![image](https://user-images.githubusercontent.com/28551993/217202691-ed5121bf-7896-4c56-a8db-2985eba7b05f.png)
+![image](https://user-images.githubusercontent.com/28551993/217203049-b37611ca-ae60-41f0-86c1-0fa8d8e95032.png)
 
 ## 4. Relacionando tabelas e classes
 
