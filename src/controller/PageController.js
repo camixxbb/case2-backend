@@ -1,5 +1,5 @@
 import { verificarToken } from "../middleware/authorization.js"
-import Page from "../model/Page.js"
+import Page from "../DAO/Page.js"
 
 export default class PageController {
     static rotas(app) {

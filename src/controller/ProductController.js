@@ -1,5 +1,5 @@
 import { verificarToken } from "../middleware/authorization.js"
-import Product from "../model/Product.js"
+import Product from "../DAO/Product.js"
 
 export default class ProductController {
     static rotas(app) {

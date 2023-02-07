@@ -1,4 +1,4 @@
-import User from "../model/User.js"
+import User from "../DAO/User.js"
 
 /**
  * Verifica se uma request foi feita por um token válido de usuário

@@ -1,6 +1,6 @@
 import { compareSync } from "bcrypt"
 import { randomUUID } from 'crypto'
-import User from "../model/User.js"
+import User from "../DAO/User.js"
 
 export default class UserController {
     static rotas(app) {
