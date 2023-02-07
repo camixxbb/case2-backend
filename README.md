@@ -340,8 +340,8 @@ export default app
 
 Desta forma, todas as controllers conseguem configurar suas rotas! Faça o teste das rotas pelo Postman, Insomnia ou alguma outra ferramenta para testar APIs (não se esqueça de iniciar o projeto com `npm start`). Exemplos:
 
-![image](https://user-images.githubusercontent.com/28551993/217202691-ed5121bf-7896-4c56-a8db-2985eba7b05f.png)
-![image](https://user-images.githubusercontent.com/28551993/217203049-b37611ca-ae60-41f0-86c1-0fa8d8e95032.png)
+![image](https://user-images.githubusercontent.com/28551993/217337507-899cb46a-4def-42ed-b431-2652ff28407a.png)
+![image](https://user-images.githubusercontent.com/28551993/217338587-af8575bc-1608-4336-a814-c15c5b7ca887.png)
 
 ## 4. Relacionando tabelas e classes
 
@@ -988,7 +988,7 @@ Vamos alterar o método `inserir` do arquivo `src/controller/ProductController.j
 
 Vamos executar um `npm run clear` e um `npm run seed` para garantirmos um ambiente inicial de 10 produtos. Depois disso, vamos executar um POST para a rota de criação de produtos:
 
-![image](https://user-images.githubusercontent.com/28551993/217204110-7e6a7d1f-ef81-4b31-9c03-9febde290de9.png)
+![image](https://user-images.githubusercontent.com/28551993/217339164-9a9ebdd3-dbd9-4251-ae64-7a4972db8644.png)
 
 E agora no explorer:
 
@@ -1261,9 +1261,9 @@ import { verificarToken } from "../middleware/authorization.js"
 
 Pronto! Agora você não conseguirá acessar essas rotas sem informar o token de acesso!
 
-![image](https://user-images.githubusercontent.com/28551993/217204467-ad153032-b121-4d62-abb9-9a092aa6fee2.png)
-![image](https://user-images.githubusercontent.com/28551993/217204587-dbe8d1a0-044b-450d-9830-8a45583487be.png)
-![image](https://user-images.githubusercontent.com/28551993/217205081-10bc85aa-b0ba-4433-8e56-93a56e82be20.png)
+![image](https://user-images.githubusercontent.com/28551993/217339406-13f29f4b-6bc3-4624-adce-ce11e1c1d348.png)
+![image](https://user-images.githubusercontent.com/28551993/217339554-3cead6ec-549d-4aea-b0e3-d2718379ff46.png)
+![image](https://user-images.githubusercontent.com/28551993/217339908-ce96288d-6de4-40ba-bcaf-4ab8b01a3038.png)
 
 
 ### 5.2. Armazenamento de senhas e criação de tokens
