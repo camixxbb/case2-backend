@@ -180,8 +180,8 @@ Vamos remover os comentários desse arquivo já que estruturamos o nosso código
 ```js
 export default class PageController {
     static routes(app) {
-        app.get('/page/:id', PageController.listar)
-        app.patch('/page/:id', PageController.atualizar)
+        app.get('/paginas/:id', PageController.listar)
+        app.patch('/paginas/:id', PageController.atualizar)
     }
 
     static async listar(req, res) {
@@ -236,10 +236,10 @@ export default class PageController {
 ```js
 export default class ProductController {
     static routes(app) {
-        app.post('/product', ProductController.create)
-        app.get('/product', ProductController.listarTodos)
-        app.patch('/product/:id', ProductController.atualizar)
-        app.delete('/product/:id', ProductController.deletar)
+        app.post('/produtos', ProductController.create)
+        app.get('/produtos', ProductController.listarTodos)
+        app.patch('/produtos/:id', ProductController.atualizar)
+        app.delete('/produtos/:id', ProductController.deletar)
     }
 
     static async create(req, res) {
@@ -1223,8 +1223,8 @@ import { verificarToken } from "../middleware/authorization.js"
 
 // Dentro da classe...
     // ...
-        app.get('/page/:id', PageController.listar) // Aberta
-        app.patch('/page/:id', verificarToken, PageController.atualizar) // Protegida
+        app.get('/paginas/:id', PageController.listar) // Aberta
+        app.patch('/paginas/:id', verificarToken, PageController.atualizar) // Protegida
     // ...
 ```
 
@@ -1235,10 +1235,10 @@ import { verificarToken } from "../middleware/authorization.js"
 
 // Dentro da classe...
     // ...
-        app.post('/product', verificarToken, ProductController.create) // Protegida
-        app.get('/product', ProductController.listarTodos) // Aberta
-        app.patch('/product/:id', verificarToken, ProductController.atualizar) // Protegida
-        app.delete('/product/:id', verificarToken, ProductController.deletar) // Protegida
+        app.post('/produtos', verificarToken, ProductController.create) // Protegida
+        app.get('/produtos', ProductController.listarTodos) // Aberta
+        app.patch('/produtos/:id', verificarToken, ProductController.atualizar) // Protegida
+        app.delete('/produtos/:id', verificarToken, ProductController.deletar) // Protegida
     // ...
 ```
 
