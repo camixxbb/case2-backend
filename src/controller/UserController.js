@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto'
 import User from "../model/User.js"
 
 export default class UserController {
-    static routes(app) {
+    static rotas(app) {
         app.post('/login', UserController.login)
     }
 

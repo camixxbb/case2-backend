@@ -1,15 +1,15 @@
-import { validToken } from "../middleware/authorization.js"
+import { verificarToken } from "../middleware/authorization.js"
 import Product from "../model/Product.js"
 
 export default class ProductController {
-    static routes(app) {
-        app.post('/product', validToken, ProductController.create)
-        app.get('/product', ProductController.readAll)
-        app.patch('/product/:id', validToken, ProductController.update)
-        app.delete('/product/:id', validToken, ProductController.delete)
+    static rotas(app) {
+        app.post('/produtos', verificarToken, ProductController.inserir)
+        app.get('/produtos', ProductController.listarTodos)
+        app.patch('/produtos/:id', verificarToken, ProductController.atualizar)
+        app.delete('/produtos/:id', verificarToken, ProductController.deletar)
     }
 
-    static async create(req, res) {
+    static async inserir(req, res) {
         const { title, description } = req.body
 
         if (!title || !description) {
@@ -30,7 +30,7 @@ export default class ProductController {
         })
     }
 
-    static async readAll(req, res) {
+    static async listarTodos(req, res) {
         const products = await Product.findAll()
         res.status(200).send({
             message: 'Produtos listados com sucesso!',
@@ -38,7 +38,7 @@ export default class ProductController {
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
 
         const product = await Product.findByProperty('id', id)
@@ -64,7 +64,7 @@ export default class ProductController {
         })
     }
 
-    static async delete(req, res) {
+    static async deletar(req, res) {
         const {id} = req.params
 
         const product = await Product.findByProperty('id', id)

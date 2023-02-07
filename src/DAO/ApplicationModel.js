@@ -1,4 +1,4 @@
-import { getConnection } from "../database/connection.js";
+import { getConnection } from "../infra/connection.js";
 
 export default class ApplicationModel {
     // =============================================== Campos estáticos internos do construtor ===============================================
@@ -97,11 +97,11 @@ export default class ApplicationModel {
     async save() {
         const table = this.constructor.getTableName()
         const propToCol = this.constructor._propertyToColumn
-        
+
         const dbObj = this.constructor._toDatabase(this)
         const columns = Object.keys(dbObj)
         const values = Object.values(dbObj)
-        
+
         const connection = await getConnection()
         if (this.id) {
             const updates = columns.map(column => `${column}=?`)

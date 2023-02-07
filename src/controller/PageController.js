@@ -1,13 +1,13 @@
-import { validToken } from "../middleware/authorization.js"
+import { verificarToken } from "../middleware/authorization.js"
 import Page from "../model/Page.js"
 
 export default class PageController {
-    static routes(app) {
-        app.get('/page/:id', PageController.read)
-        app.patch('/page/:id', validToken, PageController.update)
+    static rotas(app) {
+        app.get('/paginas/:id', PageController.listar)
+        app.patch('/paginas/:id', verificarToken, PageController.atualizar)
     }
 
-    static async read(req, res) {
+    static async listar(req, res) {
         const {id} = req.params
         const page = await Page.findByProperty('id', id)
         if (!page) {
@@ -21,7 +21,7 @@ export default class PageController {
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
         const {title, text} = req.body
         const page = await Page.findByProperty('id', id)

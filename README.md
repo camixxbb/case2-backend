@@ -18,7 +18,7 @@ npm install bcrypt cors express sqlite sqlite3
 - `bcrypt`: Armazena e compara senhas de forma segura
 - `cors`: Permite que aplicativos em outros domínios acessem nosso servidor
 - `express`: Servidor HTTP
-- `nodemon`: Monitora os o projeto e reinicia o servidor quando salvamos um arquivo (hot reload) 
+- `nodemon`: Monitora os o projeto e reinicia o servidor quando salvamos um arquivo (hot reload)
 - `sqlite`: Biblioteca auxiliar para utilizar o `sqlite3` com Promises
 - `sqlite3`: Driver do banco de dados que iremos utilizar
 
@@ -180,13 +180,13 @@ Vamos remover os comentários desse arquivo já que estruturamos o nosso código
 ```js
 export default class PageController {
     static routes(app) {
-        app.get('/page/:id', PageController.read)
-        app.patch('/page/:id', PageController.update)
+        app.get('/page/:id', PageController.listar)
+        app.patch('/page/:id', PageController.atualizar)
     }
 
-    static async read(req, res) {
+    static async listar(req, res) {
         const {id} = req.params
-        
+
         const page = {
             title: `Página ${id}`,
             text: 'Lorem ipsum dor sit amet'
@@ -203,7 +203,7 @@ export default class PageController {
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
         const {title, text} = req.body
 
@@ -223,7 +223,7 @@ export default class PageController {
         if (text) {
             page.text = text
         }
-        
+
         res.status(200).send({
             message: 'Sucesso ao alterar dados da página',
             data: page
@@ -237,9 +237,9 @@ export default class PageController {
 export default class ProductController {
     static routes(app) {
         app.post('/product', ProductController.create)
-        app.get('/product', ProductController.readAll)
-        app.patch('/product/:id', ProductController.update)
-        app.delete('/product/:id', ProductController.delete)
+        app.get('/product', ProductController.listarTodos)
+        app.patch('/product/:id', ProductController.atualizar)
+        app.delete('/product/:id', ProductController.deletar)
     }
 
     static async create(req, res) {
@@ -258,7 +258,7 @@ export default class ProductController {
         })
     }
 
-    static async readAll(req, res) {
+    static async listarTodos(req, res) {
         const products = [
             {
                 title: 'Produto 1',
@@ -275,7 +275,7 @@ export default class ProductController {
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
 
         const product = {
@@ -302,7 +302,7 @@ export default class ProductController {
         })
     }
 
-    static async delete(req, res) {
+    static async deletar(req, res) {
         const {id} = req.params
 
         const product = {
@@ -322,32 +322,23 @@ export default class ProductController {
 }
 ```
 
-Estamos quase lá! Agora, precisamos colocar todas essas controllers em um local no qual podemos acessá-las do projeto principal. Vamos criar o arquivo `src/controller/controllers.js` e guardar todas elas:
-
-```js
-import PageController from "./PageController.js";
-import ProductController from "./ProductController.js";
-import UserController from "./UserController.js";
-
-export const controllers = [
-    PageController,
-    ProductController,
-    UserController
-]
-```
-
-Para finalizar, atualize o seu `src/app.js` importando a lista de controllers e faça um for para fornecer o app à todas as controllers do array! O seu arquivo ficará assim:
+Para finalizar, atualize o seu `src/app.js` importando a lista de controllers, O seu arquivo ficará assim:
 
 ```js
 import cors from "cors";
 import express from "express";
-import { controllers } from "./controller/controllers.js";
+
+import UserController from './controller/UserController.js'
+import ProductController from './controller/ProductController.js'
+import PageController from './controller/PageController.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-controllers.forEach(controller => controller.routes(app))
+UserController.rotas(app)
+ProductController.rotas(app)
+PageController.rotas(app)
 
 export default app
 ```
@@ -359,7 +350,7 @@ Desta forma, todas as controllers conseguem configurar suas rotas! Faça o teste
 
 ## 4. Relacionando tabelas e classes
 
-O nosso próximo passo é conectar o nosso servidor a um banco de dados. Afinal, queremos que nossas informações sejam mantidas mesmo que a aplicação lance algum erro ou seja reiniciada. 
+O nosso próximo passo é conectar o nosso servidor a um banco de dados. Afinal, queremos que nossas informações sejam mantidas mesmo que a aplicação lance algum erro ou seja reiniciada.
 
 Vamos trabalhar com uma nova camada, as **models**. Em alguns projetos deixaríamos esse trabalho para os DAOs (Data Access Objects) para acessar o banco de dados e nos devolver models criadas. Porém, gostaria de trazer uma visão mais parecida com a de algumas bibliotecas de back-end que facilitam o relacionamento de modelos de dados com o banco em si. Essas bibliotecas usam a técnica ORM (Object Relational Mapping), que aproveita as vantagens da programação orientação a objetos para mapear objetos de uma determinada linguagem de programação para uma tabela no banco com suas respectivas colunas. A model nesse formato possui métodos de fabricação, busca, deleção e atualização de dados e envolve todas essas funcionalidades em suas classes. Um exemplo de biblioteca famosa de ORM para JavaScript é o Sequelize.
 
@@ -465,7 +456,7 @@ export default class ApplicationModel {
     static _propertyToColumn = new Map()
     static _columnToProperty = new Map()
 
-    static configure() {
+    static configurar() {
         throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
     }
 
@@ -489,7 +480,7 @@ import ApplicationModel from "./ApplicationModel.js"
 export default class Page extends ApplicationModel {
     id; title; text;
 
-    static configure() {
+    static configurar() {
         Page.associate('id', 'ID')
         Page.associate('title', 'TITLE')
         Page.associate('text', 'TEXT')
@@ -504,7 +495,7 @@ import ApplicationModel from "./ApplicationModel.js"
 export default class Product extends ApplicationModel {
     id; title; description;
 
-    static configure() {
+    static configurar() {
         Product.associate('id', 'ID')
         Product.associate('title', 'TITLE')
         Product.associate('description', 'DESCRIPTION')
@@ -519,7 +510,7 @@ import ApplicationModel from "./ApplicationModel.js"
 export default class User extends ApplicationModel {
     id; email; encryptedPassword; authToken;
 
-    static configure() {
+    static configurar() {
         User.associate('id', 'ID')
         User.associate('email', 'EMAIL')
         User.associate('encryptedPassword', 'ENCRYPTED_PASSWORD')
@@ -584,7 +575,7 @@ export default class ApplicationModel {
     static _propertyToColumn = new Map()
     static _columnToProperty = new Map()
 
-    static configure() {
+    static configurar() {
         throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
     }
 
@@ -628,7 +619,7 @@ export default class ApplicationModel {
 Se você colocar temporariamente esse trecho de código no final do seu arquivo `src/model/User.js` para testar as configurações, verá que nossa tradução está funcionando!
 
 ```js
-User.configure()
+User.configurar()
 
 const usr = new User()
 usr.email = "salve@com.br"
@@ -645,42 +636,38 @@ console.log( User._toModel({
 // User { id: 3, email: 'salve@com', encryptedPassword: 'jooj', authToken: 'eita' }
 ```
 
-Antes de finalizar, crie um arquivo `src/model/models.js` (mesma linha de raciocínio da lista de controllers) para guardar todas as nossas models
-
-```js
-import Page from "./Page.js";
-import Product from "./Product.js";
-import User from "./User.js";
-
-export const models = [
-    Page,
-    Product,
-    User
-]
-```
-
-Por último, importe as models no seu `src/app.js` e, para todas as models, execute o comando `.configure()`. Seu arquivo ficará assim:
+Por último, importe as models no seu `src/app.js` e, para todas as models, execute o comando `.configurar()`. Seu arquivo ficará assim:
 
 ```js
 import cors from "cors";
 import express from "express";
 
-import { controllers } from "./controller/controllers.js";
-import { models } from "./model/models.js";
+import UserController from './controller/UserController.js'
+import ProductController from './controller/ProductController.js'
+import PageController from './controller/PageController.js'
+
+import PageDAO from './DAO/Page.js'
+import ProductDAO from './DAO/Product.js'
+import UserDAO from './DAO/User.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-models.forEach( model => model.configure() );
-controllers.forEach( controller => controller.routes(app) );
+PageDAO.configurar()
+ProductDAO.configurar()
+UserDAO.configurar()
+
+UserController.rotas(app)
+ProductController.rotas(app)
+PageController.rotas(app)
 
 export default app
 ```
 
 ### 4.3. Acesso ao banco de dados
 
-Até agora vimos como descobrir qual o nome da tabela da nossa model e qual a tradução dos seus campos para colunas do banco, mas ainda não fizemos nenhuma conexão com ele! Vamos criar um arquivo `src/database/connection.js` para poder criar conexões com o banco e realizar consultas:
+Até agora vimos como descobrir qual o nome da tabela da nossa model e qual a tradução dos seus campos para colunas do banco, mas ainda não fizemos nenhuma conexão com ele! Vamos criar um arquivo `src/infra/connection.js` para poder criar conexões com o banco e realizar consultas:
 
 ```js
 import sqlite3 from "sqlite3"
@@ -853,14 +840,14 @@ Vamos implementar as funcionalidades do método `save` e entender o que está ac
         const table = this.constructor.getTableName()
         // Busca a tabela de tradução de propriedade para coluna
         const propToCol = this.constructor._propertyToColumn
-        
+
         // Se transforma em um objeto traduzido para colunas do banco de dados
         const dbObj = this.constructor._toDatabase(this)
         // Guarda o nome das colunas do banco
         const columns = Object.keys(dbObj)
         // Guarda os valores que serão inseridos nas colunas
         const values = Object.values(dbObj)
-        
+
         const connection = await getConnection()
         // Possui id: atualizar
         if (this.id) {
@@ -938,7 +925,7 @@ import User from "../src/model/User.js"
     admin.email = "admin@case2.com"
     admin.encryptedPassword = '12345678'
     const users = [admin]
-    
+
     await Page._seed(pages)
     await Product._seed(products)
     await User._seed(users)
@@ -960,9 +947,9 @@ Pronto! Agora só executar `npm run seed` e ver que os dados foram populados nas
 
 Não temos acesso a todas as letras do CRUD, por enquanto só temos o C (create): Não conseguimos realizar leituras porque ainda não temos nenhum método para listar dados, nem conseguimos atualizar ou deletar pois precisaríamos de informações de pesquisa (listagem). Porém, já conseguimos integrar uma rota completamente! Vamos criar e apagar alguns dados e ver as mudanças no explorer!
 
-Vamos alterar o método `create` do arquivo `src/controller/ProductController.js`:
+Vamos alterar o método `inserir` do arquivo `src/controller/ProductController.js`:
 ```js
-    static async create(req, res) {
+    static async inserir(req, res) {
         const { title, description } = req.body
         if (!title || !description) {
             return res.status(400).send({
@@ -1078,7 +1065,7 @@ import Page from "../model/Page.js"
 // Dentro da classe...
     //...
 
-    static async read(req, res) {
+    static async listar(req, res) {
         const {id} = req.params
         const page = await Page.findByProperty('id', id)
         if (!page) {
@@ -1092,7 +1079,7 @@ import Page from "../model/Page.js"
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
         const {title, text} = req.body
         const page = await Page.findByProperty('id', id)
@@ -1125,7 +1112,7 @@ import Product from "../model/Product.js"
 // Dentro da classe...
     //...
 
-    static async readAll(req, res) {
+    static async listarTodos(req, res) {
         const products = await Product.findAll()
         res.status(200).send({
             message: 'Produtos listados com sucesso!',
@@ -1133,7 +1120,7 @@ import Product from "../model/Product.js"
         })
     }
 
-    static async update(req, res) {
+    static async atualizar(req, res) {
         const {id} = req.params
 
         const product = await Product.findByProperty('id', id)
@@ -1159,7 +1146,7 @@ import Product from "../model/Product.js"
         })
     }
 
-    static async delete(req, res) {
+    static async deletar(req, res) {
         const {id} = req.params
 
         const product = await Product.findByProperty('id', id)
@@ -1204,7 +1191,7 @@ Crie o arquivo `src/middleware/authorization.js` e coloque o seguinte:
 ```js
 import User from "../model/User.js"
 
-export const validToken = async (req, res, next) => {
+export const verificarToken = async (req, res, next) => {
     const token = req.headers['x-auth-token']
     if (!token) {
         res.status(401).send({
@@ -1232,26 +1219,26 @@ Agora atualize as controllers para usar essa middleware em rotas protegidas:
 `src/controller/PageController.js`
 ```js
 // Fora da classe...
-import { validToken } from "../middleware/authorization.js"
+import { verificarToken } from "../middleware/authorization.js"
 
 // Dentro da classe...
     // ...
-        app.get('/page/:id', PageController.read) // Aberta
-        app.patch('/page/:id', validToken, PageController.update) // Protegida
+        app.get('/page/:id', PageController.listar) // Aberta
+        app.patch('/page/:id', verificarToken, PageController.atualizar) // Protegida
     // ...
 ```
 
 `src/controller/ProductController.js`
 ```js
 // Fora da classe...
-import { validToken } from "../middleware/authorization.js"
+import { verificarToken } from "../middleware/authorization.js"
 
 // Dentro da classe...
     // ...
-        app.post('/product', validToken, ProductController.create) // Protegida
-        app.get('/product', ProductController.readAll) // Aberta
-        app.patch('/product/:id', validToken, ProductController.update) // Protegida
-        app.delete('/product/:id', validToken, ProductController.delete) // Protegida
+        app.post('/product', verificarToken, ProductController.create) // Protegida
+        app.get('/product', ProductController.listarTodos) // Aberta
+        app.patch('/product/:id', verificarToken, ProductController.atualizar) // Protegida
+        app.delete('/product/:id', verificarToken, ProductController.deletar) // Protegida
     // ...
 ```
 
