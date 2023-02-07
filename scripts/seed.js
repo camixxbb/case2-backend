@@ -6,7 +6,7 @@ import Product from "../src/model/Product.js"
 import User from "../src/model/User.js"
 
 (async () => {
-    models.forEach(model => model.init())
+    models.forEach(model => model.configure())
 
     const page = new Page()
     page.title = 'Sobre'

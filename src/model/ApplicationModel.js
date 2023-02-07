@@ -58,8 +58,8 @@ export default class ApplicationModel {
         return this.name.toLowerCase()
     }
 
-    static init() {
-        throw new Error('Você deve criar sua própria versão de SuaModel.init()! Dentro dela chame o método "SuaModel.correlate" para relacionar as propriedades da model com as colunas do banco!')
+    static configure() {
+        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
     }
 
     static associate( property, column ) {

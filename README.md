@@ -464,6 +464,95 @@ User.getTableName() // "user"
 
 > Por que `User.getTableName()` retorna `"user"` e não `"applicationmodel"` já que o método foi declarado na classe `ApplicationModel`? É porque estamos tirando vantagem do **polimorfismo**: uma classe filha pode sobrescrever os comportamentos de uma classe mãe. No JavaScript isso também significa que se uma classe filha chama métodos de uma classe mãe, as chamadas para *this* vão referenciar a classe filha, pois é ela que está executando os métodos! Desta forma, o método `.getTableName()` está sendo executado por `User` e o código acaba sendo traduzido para `return User.name.toLowerCase()` naquela linha de código. Esse é a base fundamental para os comportamentos que montaremos na nossa model.
 
+### Tradução de dados
+
+Como vimos anteriormente, ORM significa *Object Relational Mapping*. Isto significa que relacionaremos propriedades das nossas classes para colunas no banco de dados. Isso é muito importante porque às vezes os nomes das colunas nos bancos de dados são diferentes das propriedades na nossa linguagem de programação. Por isso, precisamos criar uma tabela de tradução para saber qual coluna do banco referencia qual propriedade da classe e vice versa. Por exemplo, imagine o seguinte cenário de uma tabela `user` e uma classe `User` e no passo a passo para traduzir os dados:
+
+Nome da propriedade na classe | Nome da coluna no BD
+--- | ---
+id | ID
+email | EMAIL
+encryptedPassword | ENCRYPTED_PASSWORD
+authToken | AUTH_TOKEN
+
+Ao fazer uma busca de um objeto no banco, informaremos qual o campo da classe gostaríamos de pesquisar. Queremos buscar um usuário pelo seu token de autorização, então o passo a passo seria:
+- Informar que queremos buscá-lo pela propriedade `authToken` e fornecer seu valor
+- A classe realizará uma tradução **propriedade -> coluna** e essa propriedade será traduzida para `AUTH_TOKEN` para iniciar a busca no banco
+- Os dados serão devolvidos com a nomenclatura de colunas (`ID`, `EMAIL`, `ENCRYPTED_PASSWORD` e `AUTH_TOKEN`) e cada propriedade precisará de uma tradução **coluna -> propriedade**
+- Uma instância vazia da model será criada e seus campos serão populados com as informações traduzidas
+- A instância preenchida será devolvida para uso
+
+Para poder realizar as traduções precisaremos guardar a tabela de tradução. Para isso, vou utilizar duas estruturas de dados do tipo `Map`: uma para traduzir nomes de propriedades para colunas e o outro para guardar o sentido contrário da tradução. Além disso, criaremos um método para associar essas duas informações de uma vez só e um método obrigatório para configurar todas as models:
+
+`src/model/ApplicationModel.js`
+```js
+export default class ApplicationModel {
+    static _propertyToColumn = new Map()
+    static _columnToProperty = new Map()
+
+    static configure() {
+        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
+    }
+
+    static associate( property, column ) {
+        this._propertyToColumn.set(property, column)
+        this._columnToProperty.set(column, property)
+    }
+
+    static getTableName() {
+        return this.name.toLowerCase()
+    }
+}
+```
+
+Desta forma, podemos criar as propriedades nas nossas models e associar com as colunas do banco em cada uma das classes:
+
+`src/model/Page.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class Page extends ApplicationModel {
+    id; title; text;
+
+    static configure() {
+        Page.associate('id', 'ID')
+        Page.associate('title', 'TITLE')
+        Page.associate('text', 'TEXT')
+    }
+}
+```
+
+`src/model/Product.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class Product extends ApplicationModel {
+    id; title; description;
+
+    static configure() {
+        Product.associate('id', 'ID')
+        Product.associate('title', 'TITLE')
+        Product.associate('description', 'DESCRIPTION')
+    }
+}
+```
+
+`src/model/User.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class User extends ApplicationModel {
+    id; email; encryptedPassword; authToken;
+
+    static configure() {
+        User.associate('id', 'ID')
+        User.associate('email', 'EMAIL')
+        User.associate('encryptedPassword', 'ENCRYPTED_PASSWORD')
+        User.associate('authToken', 'AUTH_TOKEN')
+    }
+}
+```
+
 ## 5. Autenticação e autorização
 
 
