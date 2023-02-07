@@ -44,6 +44,9 @@ export default class ApplicationModel {
     }
 
     static _toDatabase(model) {
+        if (!model) {
+            return null
+        }
         const properties = Object.keys(model)
         const row = {}
         for (const property of properties) {

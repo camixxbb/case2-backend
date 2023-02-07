@@ -354,35 +354,10 @@ export default app
 
 Desta forma, todas as controllers conseguem configurar suas rotas! Faça o teste das rotas pelo Postman, Insomnia ou alguma outra ferramenta para testar APIs (não se esqueça de iniciar o projeto com `npm start`). Exemplos:
 
-- `GET localhost:3000/page/1`
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI GET localhost:3000/page/1
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI PATCH localhost:3000/product/2: `{ "description": "Nova descrição!" }` 
 
-    Resposta: `200 OK`
-    ```json
-    {
-        "message": "Sucesso ao buscar página",
-        "data": {
-            "title": "Página 1",
-            "text": "Lorem ipsum dor sit amet"
-        }
-    }
-    ```
-
-- `PATCH localhost:3000/product/2`
-
-    Corpo da requisição (JSON): `{ "description": "Nova descrição!" }`
-
-    Resposta: `200 OK`
-    ```json
-    {
-        "message": "Produto alterado com sucesso!",
-        "data": {
-            "title": "Produto 2",
-            "description": "Nova descrição!"
-        }
-    }
-    ```
-
-## 4. Conectando com o banco
+## 4. Relacionando tabelas e classes
 
 O nosso próximo passo é conectar o nosso servidor a um banco de dados. Afinal, queremos que nossas informações sejam mantidas mesmo que a aplicação lance algum erro ou seja reiniciada. 
 
@@ -396,7 +371,7 @@ Caso escolha a opção 1, você deve ignorar o restante deste passo 4 todo e usa
 
 Caso escolha a opção 2, continue seguindo este passo 4!
 
-### Model genérica
+### 4.1. Model genérica
 
 Uma das vantagens de usar ORMs é que eles deixam a maior parte da carga pesada em uma classe geral, a qual será herdada por outras classes que poderão usar seus métodos de forma customizada. O primeiro exemplo que vamos montar é de como encontrar, de acordo com a model que estamos usando, qual o nome da tabela em que guardaremos seus dados.
 
@@ -430,7 +405,7 @@ export default class ApplicationModel {
 Agora, crie as outras 3 models do nosso projeto (página, produto e usuário) nos seguintes arquivos:
 `src/model/Page.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class Page extends ApplicationModel {
 
@@ -439,7 +414,7 @@ export default class Page extends ApplicationModel {
 
 `src/model/Product.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class Product extends ApplicationModel {
 
@@ -448,7 +423,7 @@ export default class Product extends ApplicationModel {
 
 `src/model/User.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class User extends ApplicationModel {
 
@@ -464,7 +439,7 @@ User.getTableName() // "user"
 
 > Por que `User.getTableName()` retorna `"user"` e não `"applicationmodel"` já que o método foi declarado na classe `ApplicationModel`? É porque estamos tirando vantagem do **polimorfismo**: uma classe filha pode sobrescrever os comportamentos de uma classe mãe. No JavaScript isso também significa que se uma classe filha chama métodos de uma classe mãe, as chamadas para *this* vão referenciar a classe filha, pois é ela que está executando os métodos! Desta forma, o método `.getTableName()` está sendo executado por `User` e o código acaba sendo traduzido para `return User.name.toLowerCase()` naquela linha de código. Esse é a base fundamental para os comportamentos que montaremos na nossa model.
 
-### Tradução de dados
+### 4.2. Tradução de dados
 
 Como vimos anteriormente, ORM significa *Object Relational Mapping*. Isto significa que relacionaremos propriedades das nossas classes para colunas no banco de dados. Isso é muito importante porque às vezes os nomes das colunas nos bancos de dados são diferentes das propriedades na nossa linguagem de programação. Por isso, precisamos criar uma tabela de tradução para saber qual coluna do banco referencia qual propriedade da classe e vice versa. Por exemplo, imagine o seguinte cenário de uma tabela `user` e uma classe `User` e no passo a passo para traduzir os dados:
 
@@ -509,7 +484,7 @@ Desta forma, podemos criar as propriedades nas nossas models e associar com as c
 
 `src/model/Page.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class Page extends ApplicationModel {
     id; title; text;
@@ -524,7 +499,7 @@ export default class Page extends ApplicationModel {
 
 `src/model/Product.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class Product extends ApplicationModel {
     id; title; description;
@@ -539,7 +514,7 @@ export default class Product extends ApplicationModel {
 
 `src/model/User.js`
 ```js
-import ApplicationModel from "./ApplicationModel"
+import ApplicationModel from "./ApplicationModel.js"
 
 export default class User extends ApplicationModel {
     id; email; encryptedPassword; authToken;
@@ -553,7 +528,795 @@ export default class User extends ApplicationModel {
 }
 ```
 
+Agora que temos uma tabela de tradução funcional, vamos criar dois métodos bem parecidos para nos auxiliar:
+- Traduzir uma model para uma linha do banco de dados: `_toDatabase`
+    ```js
+        static _toDatabase(model) {
+            // Se o modelo não foi informado
+            if (!model) {
+                // Devolvemos nulo
+                return null
+            }
+            // Buscamos todos os nomes de propriedades da model
+            const properties = Object.keys(model)
+            // Criamos uma linha vazia
+            const row = {}
+            // Passamos por cada nome de propriedade
+            for (const property of properties) {
+                // Traduzimos para o nome da coluna
+                const column = this._propertyToColumn.get(property)
+                // Armazenamos o dado da model caso ele exista, senão armazenamos nulo
+                row[column] = model[property] ?? null
+            }
+            // Devolvemos a linha do banco
+            return row
+        }
+    ```
+- Traduzir resultado do banco de dados para uma model: `_toModel`
+    ```js
+        static _toModel(dbResult) {
+            // Se o resultado é vazio ou não informado
+            if (!dbResult) {
+                // Devolvemos nulo
+                return null
+            }
+            // Buscamos todos os nomes de colunas do resultado
+            const columns = Object.keys(dbResult)
+            // Criamos uma instância vazia
+            const instance = new this()
+            // Passamos por cada nome de coluna
+            for (const column of columns) {
+                // Traduzimos para o nome da propriedade
+                const property = this._columnToProperty.get(column)
+                // Armazenamos o dado da coluna caso ele exista, senão armazenamos nulo
+                instance[property] = dbResult[column] ?? null
+            }
+            // Devolvemos a instância preenchida
+            return instance
+        }
+    ```
+
+> OBS: Percebeu que ali em cima executamos um `new this()`? Esse código pode parecer estranho, mas se lembra que a palavra *this* em um método estático referencia a classe construtora e não uma instância existente? Isso significa que se esse trecho de código for executado pela classe `User`, seria o equivalente a executar um `new User()`; se esse trecho de código for executado pela classe `Page`, seria o equivalente a executar um `new Page()` e assim por diante! **Mas lembre-se que esse comportamento só acontece em métodos estáticos!** Fazer isso em um método de instância geraria um erro: `Uncaught TypeError: this is not a constructor`!
+
+Nossa model genérica ficará assim:
+```js
+export default class ApplicationModel {
+    static _propertyToColumn = new Map()
+    static _columnToProperty = new Map()
+
+    static configure() {
+        throw new Error('Você deve criar sua própria versão de SuaModel.configure! Dentro dela chame o método "SuaModel.associate" para relacionar as propriedades da model com as colunas do banco!')
+    }
+
+    static associate( property, column ) {
+        this._propertyToColumn.set(property, column)
+        this._columnToProperty.set(column, property)
+    }
+
+    static getTableName() {
+        return this.name.toLowerCase()
+    }
+
+    static _toModel(dbResult) {
+        if (!dbResult) {
+            return null
+        }
+        const columns = Object.keys(dbResult)
+        const instance = new this()
+        for (const column of columns) {
+            const property = this._columnToProperty.get(column)
+            instance[property] = dbResult[column] ?? null
+        }
+        return instance
+    }
+
+    static _toDatabase(model) {
+        if (!model) {
+            return null
+        }
+        const properties = Object.keys(model)
+        const row = {}
+        for (const property of properties) {
+            const column = this._propertyToColumn.get(property)
+            row[column] = model[property] ?? null
+        }
+        return row
+    }
+}
+```
+
+Se você colocar temporariamente esse trecho de código no final do seu arquivo `src/model/User.js` para testar as configurações, verá que nossa tradução está funcionando!
+
+```js
+User.configure()
+
+const usr = new User()
+usr.email = "salve@com.br"
+
+console.log( User._toDatabase(usr) )
+// { ID: null, EMAIL: 'salve@com.br', ENCRYPTED_PASSWORD: null, AUTH_TOKEN: null }
+
+console.log( User._toModel({
+    ID: 3,
+    EMAIL: 'salve@com',
+    AUTH_TOKEN: 'eita',
+    ENCRYPTED_PASSWORD: 'jooj'
+}) )
+// User { id: 3, email: 'salve@com', encryptedPassword: 'jooj', authToken: 'eita' }
+```
+
+Antes de finalizar, crie um arquivo `src/model/models.js` (mesma linha de raciocínio da lista de controllers) para guardar todas as nossas models
+
+```js
+import Page from "./Page.js";
+import Product from "./Product.js";
+import User from "./User.js";
+
+export const models = [
+    Page,
+    Product,
+    User
+]
+```
+
+Por último, importe as models no seu `src/app.js` e, para todas as models, execute o comando `.configure()`. Seu arquivo ficará assim:
+
+```js
+import cors from "cors";
+import express from "express";
+
+import { controllers } from "./controller/controllers.js";
+import { models } from "./model/models.js";
+
+const app = express()
+app.use(cors())
+app.use(express.json())
+
+models.forEach( model => model.configure() );
+controllers.forEach( controller => controller.routes(app) );
+
+export default app
+```
+
+### 4.3. Acesso ao banco de dados
+
+Até agora vimos como descobrir qual o nome da tabela da nossa model e qual a tradução dos seus campos para colunas do banco, mas ainda não fizemos nenhuma conexão com ele! Vamos criar um arquivo `src/database/connection.js` para poder criar conexões com o banco e realizar consultas:
+
+```js
+import sqlite3 from "sqlite3"
+import { open } from "sqlite"
+
+export const getConnection = () => open({
+    filename: './db.sqlite',
+    driver: sqlite3.verbose().Database
+})
+```
+
+Esse código abrirá uma conexão com um banco sqlite3 no arquivo raiz `db.sqlite`. Não se preocupe, se o arquivo não existir ele será criado automaticamente.
+
+### 4.3.1. Scripts auxiliares
+
+Geralmente quando iniciamos um projeto queremos pelo menos alguns dados populados para a gente. Nem sempre queremos limpar as linhas de uma tabela ou apagar completamente o banco de dados. Por isso criaremos alguns scripts para executar alguns comandos auxiliares em momentos necessários:
+- `clear`: Limpa os dados das tabelas mas as mantém. Útil antes de executar um `seed`.
+- `drop`: Deleta todas as tabelas com todos os dados dentro. Útil quando a tabela mudou de formato (ganhou/perdeu colunas ou um tipo de dado foi alterado).
+- `migrate`: Cria todas as tabelas do banco de dados, sem nenhuma linha preenchida. Útil após um `drop` ou da primeira vez subindo seu banco de dados.
+- `seed`: Popula linhas de tabelas. Útil antes de executar o seu projeto.
+
+Vamos aproveitar a nossa model genérica e criar os três primeiros métodos (o seed deixaremos para depois):
+
+`src/model/ApplicationModel.js`
+```js
+// Fora da classe...
+import { getConnection } from "../database/connection.js"
+
+// Dentro da classe...
+    // ...
+
+    static async _clear() {
+        const connection = await getConnection()
+        await connection.exec(`DELETE FROM ${this.getTableName()};`)
+        await connection.close()
+    }
+
+    static async _drop() {
+        const connection = await getConnection()
+        await connection.exec(`DROP TABLE IF EXISTS ${this.getTableName()};`)
+        await connection.close()
+    }
+
+    static async _migrate(columnsConfig) {
+        const connection = await getConnection()
+        await connection.exec(`CREATE TABLE IF NOT EXISTS ${this.getTableName()} (${columnsConfig.join(',')});`)
+        await connection.close()
+    }
+
+    // ...
+```
+
+Vamos criar três arquivos em uma nova pasta: `scripts/clear.js`, `scripts/drop.js` e `scripts/migrate.js`:
+
+`scripts/clear.js`
+```js
+import { models } from "../src/model/models.js"
+
+(async () => {
+    await Promise.all(models.map(model => model._clear()))
+})()
+```
+
+`scripts/drop.js`
+```js
+import { models } from "../src/model/models.js"
+
+(async () => {
+    await Promise.all(models.map(model => model._drop()))
+})()
+```
+
+`scripts/migrate.js`
+```js
+import Page from "../src/model/Page.js"
+import Product from "../src/model/Product.js"
+import User from "../src/model/User.js"
+
+(async () => {
+    await Page._migrate([
+        '"ID" INTEGER PRIMARY KEY NOT NULL',
+        '"TITLE" TEXT NOT NULL',
+        '"TEXT" TEXT NOT NULL'
+    ])
+    await Product._migrate([
+        '"ID" INTEGER PRIMARY KEY NOT NULL',
+        '"TITLE" TEXT NOT NULL',
+        '"DESCRIPTION" TEXT NOT NULL'
+    ])
+    await User._migrate([
+        '"ID" INTEGER PRIMARY KEY NOT NULL',
+        '"EMAIL" TEXT NOT NULL',
+        '"ENCRYPTED_PASSWORD" TEXT NOT NULL',
+        '"AUTH_TOKEN" TEXT'
+    ])
+})()
+```
+
+Agora, no seu `package.json` adicione os seguintes dados dentro do campo `"scripts"`:
+
+```json
+    "clear": "node scripts/clear.js",
+    "drop": "node scripts/drop.js",
+    "migrate": "node scripts/migrate.js",
+```
+
+Pronto! Agora é só rodar
+- `npm run drop` para apagar tudo: quando a estrutura das suas tabelas mudarem
+- `npm run migrate` primeira vez executando ou após um drop para criar as tabelas
+- `npm run clear` para limpar os dados do banco e iniciar com o banco novinho
+
+Recomendo instalar a extensão [SQLite](https://marketplace.visualstudio.com/items?itemName=alexcvzz.vscode-sqlite) do VSCode para explorar as tabelas criadas. Após executar `npm run migrate`, clique com o botão direito do mouse em cima do arquivo `db.sqlite` e clique em `Open Database`. O VSCode abrirá o `SQLITE EXPLORER` e você poderá verificar que as suas tabelas estão com as colunas configuradas corretamente.
+
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI
+
+### 4.3.2. Métodos de instância
+
+Já que nós temos uma estrutura de tabelas montadas e podemos visualizar esses dados nas tabelas, vamos aprender a criar, atualizar e deletar informações com as nossas models. Cada instância (objeto criado a partir de uma classe) de cada model representará uma e somente uma linha do banco de uma tabela.
+
+A ideia é que a gente consiga realizar esse tipo de operação de uma forma simples:
+
+```js
+const about = new Page()
+about.title = 'Sobre'
+about.text = 'Um site muito maneiro'
+await about.save() // Salvaria no banco uma nova linha
+
+const products = /* Busca no banco todos os produtos de algum jeito */
+products[0].description = 'Descrição muito boa!'
+await products[0].save() // Atualizaria uma linha do banco
+
+await products[1].delete() // Removeria uma linha do banco
+```
+
+Perceba que o `save` possui duas funcionalidades: criar um dado e atualizar um dado. Isso se dá porque quando criamos uma nova instância diretamente no nosso código (por exemplo, `new Page()`), não a criamos diretamente no banco. No geral, ela não tem um identificador e precisa ser armazenada no banco para que ganhe um identificador único.
+
+Já a atualização é feita quando essa model foi criada dentro de uma função de busca: Quando fazemos esse pedido para o banco ele traduz os dados das tabelas e cria uma ou mais instâncias na hora com a identificação e os dados das colunas (se lembra do `new this()` lá em cima?) encontradas, depois ele devolve essas instâncias para utilizarmos seus dados.
+
+De uma forma ou de outra, precisamos de pelo menos uma informação que vai diferenciar um dado de outro: uma chave primária! Para não aumentarmos mais ainda a complexidade, vamos assumir que todas as nossas models usam id como chave primária (no banco pode ser qualquer outra coisa, por exemplo `pk_cpf`, desde que faça a associação com o `id` na model depois). Vamos criar esse campo das instâncias e o método `save` para as instâncias também:
+
+`src/model/ApplicationModel.js`
+```js
+    //...
+
+    id;
+
+    async save() {
+        if (this.id) {
+            // Atualiza linha já que possui identificador único definido
+        } else {
+            // Cria linha no banco e atualiza o objeto no código com o novo identificador único criado na hora da inserção
+        }
+    }
+
+    //...
+```
+
+> OBS: Não estamos mais trabalhando com métodos estáticos! Agora o *this* está se referindo a uma instância da classe criada com `new`!
+
+Vamos implementar as funcionalidades do método `save` e entender o que está acontecendo:
+
+`src/model/ApplicationModel.js`
+```js
+    //...
+
+    id;
+
+    async save() {
+        // Busca o nome da tabela
+        const table = this.constructor.getTableName()
+        // Busca a tabela de tradução de propriedade para coluna
+        const propToCol = this.constructor._propertyToColumn
+        
+        // Se transforma em um objeto traduzido para colunas do banco de dados
+        const dbObj = this.constructor._toDatabase(this)
+        // Guarda o nome das colunas do banco
+        const columns = Object.keys(dbObj)
+        // Guarda os valores que serão inseridos nas colunas
+        const values = Object.values(dbObj)
+        
+        const connection = await getConnection()
+        // Possui id: atualizar
+        if (this.id) {
+            // Gera a query no formato do UPDATE
+            const updates = columns.map(column => `${column}=?`)
+            // Executa um update na tabela, informa quais colunas que serão modificadas, seus valores e qual linha será afetada
+            await connection.run(
+                `UPDATE ${table} SET ${updates} WHERE ${propToCol.get('id')} = ?;`,
+                ...values,
+                this.id
+            )
+        // Não possui id: inserir
+        } else {
+            // Busca o último id da inserção executada informando o nome das colunas e os valores inseridos
+            const { lastID } = await connection.run(
+                `INSERT INTO ${table} (${columns}) VALUES (${values.map(_ => '?').join(',')});`,
+                ...values
+            )
+            // Atualiza o objeto do código para refletir as alterações do banco de dados
+            this.id = lastID
+        }
+        // Finaliza a conexão
+        await connection.close()
+    }
+
+    //...
+```
+
+> Perceba que para acessar o método estático `.getTableName()` usei `this.constructor.getTableName()`. Fiz isso pois não estamos mais em um método estático e sim de instância! Para acessar um campo estático em uma instância de `User`, por exemplo, precisaríamos saber qual é a sua própria classe. A classe construtora está disponível em métodos de instância no campo `this.constructor` de qualquer objeto do JavaScript.
+
+Para testar que este método está funcionando, vamos criar o nosso último script auxiliar: `seed`!
+
+Na `src/model/ApplicationModel.js`, adicione junto aos outros métodos auxiliares:
+```js
+    // ...
+
+    static async _seed(models) {
+        for ( const model of models ) {
+            await model.save()
+        }
+    }
+
+    // ...
+```
+
+Desta forma só precisamos informar um array de instâncias que todas elas serão criadas e inseridas no banco!
+
+Crie um arquivo `scripts/seed.js` e coloque o seguinte conteúdo:
+
+```js
+import { models } from "../src/model/models.js"
+
+import Page from "../src/model/Page.js"
+import Product from "../src/model/Product.js"
+import User from "../src/model/User.js"
+
+(async () => {
+    // Precisamos configurar as models antes das inserções para ter acesso à tabela de tradução
+    models.forEach(model => model.configure())
+
+    const page = new Page()
+    page.title = 'Sobre'
+    page.text = 'Lorem ipsum dolor sit amet.'
+    const pages = [page]
+
+    const products = []
+    for (let i=1; i<=10; i++) {
+        const prod = new Product()
+        prod.title = `Produto ${i}`
+        prod.description = `Descrição do produto ${i}`
+        products.push(prod)
+    }
+
+    const admin = new User()
+    admin.email = "admin@case2.com"
+    admin.encryptedPassword = '12345678'
+    const users = [admin]
+    
+    await Page._seed(pages)
+    await Product._seed(products)
+    await User._seed(users)
+})()
+```
+
+Agora, adicione no campo `"script"` do seu `package.json` mais uma propriedade:
+```json
+    "seed": "node scripts/seed.js"
+```
+
+Pronto! Agora só executar `npm run seed` e ver que os dados foram populados nas tabelas!
+
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI page
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI product
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI user
+
+### 4.3.3. Integração da primeira rota de produtos na controller
+
+Não temos acesso a todas as letras do CRUD, por enquanto só temos o C (create): Não conseguimos realizar leituras porque ainda não temos nenhum método para listar dados, nem conseguimos atualizar ou deletar pois precisaríamos de informações de pesquisa (listagem). Porém, já conseguimos integrar uma rota completamente! Vamos criar e apagar alguns dados e ver as mudanças no explorer!
+
+Vamos alterar o método `create` do arquivo `src/controller/ProductController.js`:
+```js
+    static async create(req, res) {
+        const { title, description } = req.body
+        if (!title || !description) {
+            return res.status(400).send({
+                message: 'Os campos "title" e "description" são obrigatórios'
+            })
+        }
+
+        const product = new Product()
+        product.title = title
+        product.description = description
+        await product.save()
+
+        res.status(200).send({
+            message: 'Produto criado com sucesso!',
+            data: product
+        })
+    }
+```
+
+Vamos executar um `npm run clear` e um `npm run seed` para garantirmos um ambiente inicial de 10 produtos. Depois disso, vamos executar um POST para a rota de criação de produtos:
+
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO INSOMNIA AQUI
+
+E agora no explorer:
+
+# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI
+
+Maravilha! Agora vamos ver como podemos buscar os dados com as nossas models!
+
+### 4.3.4. Busca e atualização
+
+Uma das principais funcionalidades de busca é a listagem completa. Geralmente gostaríamos de devolver todos os dados, sem nenhum filtro. Às vezes, gostaríamos de encontrar somente uma linha de uma tabela em específico, buscando por valores exatos. Nós vamos implementar dois métodos, o `findAll` e o `findByProperty` que fazem exatamente o que foi citado acima.
+
+```js
+    //...
+
+    static async findAll() {
+        const connection = await getConnection()
+        const all = await connection.all(
+            `SELECT * FROM ${this.getTableName()}`
+        )
+        await connection.close()
+        // Importante traduzir os resultados do banco para as models que podemos usar
+        return all.map( result => this._toModel(result) )
+    }
+
+    static async findByProperty(property, value) {
+        const connection = await getConnection()
+        // Traduz o nome da propriedade para o nome da coluna
+        const column = this._propertyToColumn.get(property)
+        const result = await connection.get(
+            `SELECT * FROM ${this.getTableName()} WHERE ${column} = ?`,
+            value
+        )
+        await connection.close()
+        // Traduz de volta o resultado para uma model
+        return this._toModel(result)
+    }
+
+    //...
+```
+
+Com estes dois últimos métodos conseguimos implementar todos os métodos que faltavam!
+
+### 4.3.5. Últimas rotas nas controllers
+
+`src/controller/UserController.js`
+```js
+// Fora da classe...
+import User from "../model/User.js"
+
+// Dentro da classe...
+    //...
+
+    static async login(req, res) {
+        const { email, password } = req.body
+        if (!email || !password) {
+            return res.status(400).send({
+                message: 'Os campos "email" e "password" são obrigatórios'
+            })
+        }
+
+        const user = await User.findByProperty('email', email)
+        if (!user) {
+            return res.status(404).send({
+                message: 'Usuário não encontrado'
+            })
+        }
+
+        const passwordsMatch = password === user.encryptedPassword
+        if (!passwordsMatch) {
+            return res.status(401).send({
+                message: 'Senha incorreta'
+            })
+        }
+
+        user.authToken = 'fedcba'
+        await user.save()
+
+        res.status(200).send({
+            token: user.authToken
+        })
+    }
+
+    //...
+```
+
+`src/controller/PageController.js`
+```js
+// Fora da classe...
+import Page from "../model/Page.js"
+
+// Dentro da classe...
+    //...
+
+    static async read(req, res) {
+        const {id} = req.params
+        const page = await Page.findByProperty('id', id)
+        if (!page) {
+            return res.status(404).send({
+                message: 'Página não encontrada'
+            })
+        }
+        res.status(200).send({
+            message: 'Sucesso ao buscar página',
+            data: page
+        })
+    }
+
+    static async update(req, res) {
+        const {id} = req.params
+        const {title, text} = req.body
+        const page = await Page.findByProperty('id', id)
+        if (!page) {
+            return res.status(404).send({
+                message: 'Página não encontrada'
+            })
+        }
+        if (title) {
+            page.title = title
+        }
+        if (text) {
+            page.text = text
+        }
+        await page.save()
+        res.status(200).send({
+            message: 'Sucesso ao alterar dados da página',
+            data: page
+        })
+    }
+
+    //...
+```
+
+`src/controller/ProductController.js`
+```js
+// Fora da classe...
+import Product from "../model/Product.js"
+
+// Dentro da classe...
+    //...
+
+    static async readAll(req, res) {
+        const products = await Product.findAll()
+        res.status(200).send({
+            message: 'Produtos listados com sucesso!',
+            data: products
+        })
+    }
+
+    static async update(req, res) {
+        const {id} = req.params
+
+        const product = await Product.findByProperty('id', id)
+        if (!product) {
+            return res.status(404).send({
+                message: `O produto de id ${id} não existe`
+            })
+        }
+
+        const {title, description} = req.body
+        if (title) {
+            product.title = title
+        }
+        if (description) {
+            product.description = description
+        }
+
+        await product.save()
+
+        res.status(200).send({
+            message: 'Produto alterado com sucesso!',
+            data: product
+        })
+    }
+
+    static async delete(req, res) {
+        const {id} = req.params
+
+        const product = await Product.findByProperty('id', id)
+        if (!product) {
+            return res.status(404).send({
+                message: `O produto de id ${id} não existe`
+            })
+        }
+
+        await product.delete()
+
+        res.status(200).send({
+            message: 'Produto deletado com sucesso!'
+        })
+    }
+
+    //...
+```
+
+Teste todas as rotas! Agora todas elas funcionam!
+
 ## 5. Autenticação e autorização
 
+Uma parte importantíssima na hora de montar as aplicações é a **restrição de acesso**. Nem sempre gostaríamos que todos tivessem acesso a todas as funcionalidades. Por exemplo, um desconhecido pode entrar no nosso site e apagar todos os produtos! Para isso, precisamos de um sistema de autenticação.
 
+Este sistema será simples, pois teremos dois tipos de rotas:
+- Abertas
+- Protegidas
 
+As rotas abertas aceitam o pedido de qualquer usuário. Neste exemplo, as nossas rotas abertas serão a de busca de informação de página, listagem de produtos e tentativa de login.
+
+As rotas protegidas só serão liberadas se você possuir um "crachá" te identificando. Você só conseguirá obter este "crachá" se conseguir realizar um login com sucesso na plataforma. Em sistemas web chamamos este "crachá virtual" de *token de autorização*.
+
+### 5.1. Cabeçalhos, tokens e middleware
+
+O token de autorização só será enviado para o servidor em uma parte específica do nosso pedido chamada cabeçalho (servirá como se fosse uma assinatura do usuário, ou um crachá virtual). Ao chegar no servidor, caso a rota seja protegida, o pedido irá procurar essa credencial e verificar no banco se ela existe. Caso ela não exista, não permitiremos o acesso à aplicação.
+
+Para isso, vamos criar uma **middleware**. Uma **middleware** é uma função que executa antes ou depois do código da controller para tratar o pedido de alguma forma. Ela aceita a request atual, o objeto da response e um parâmetro extra: next! Este parâmetro será a próxima função que será executada para esta rota. Ou seja, se quisermos seguir o processamento do pedido na controller executaremos a função `next()` e se quisermos rejeitar o pedido saímos da função e mandamos uma resposta de erro.
+
+Crie o arquivo `src/middleware/authorization.js` e coloque o seguinte:
+
+```js
+import User from "../model/User.js"
+
+export const validToken = async (req, res, next) => {
+    const token = req.headers['x-auth-token']
+    if (!token) {
+        res.status(401).send({
+            success: false,
+            message: 'Token não informado!'
+        })
+        return
+    }
+    const user = await User.findByProperty('authToken', token)
+    if (!user) {
+        res.status(401).send({
+            success: false,
+            message: 'Não autorizado!'
+        })
+        return
+    }
+    next()
+}
+```
+
+O código acima faz exatamente o que falamos anteriormente: Se um token não for informado no cabeçalho ou se o token não pertencer a nenhum usuário, rejeitamos o pedido. Caso contrário, continuamos o processamento!
+
+Agora atualize as controllers para usar essa middleware em rotas protegidas:
+
+`src/controller/PageController.js`
+```js
+// Fora da classe...
+import { validToken } from "../middleware/authorization.js"
+
+// Dentro da classe...
+    // ...
+        app.get('/page/:id', PageController.read) // Aberta
+        app.patch('/page/:id', validToken, PageController.update) // Protegida
+    // ...
+```
+
+`src/controller/ProductController.js`
+```js
+// Fora da classe...
+import { validToken } from "../middleware/authorization.js"
+
+// Dentro da classe...
+    // ...
+        app.post('/product', validToken, ProductController.create) // Protegida
+        app.get('/product', ProductController.readAll) // Aberta
+        app.patch('/product/:id', validToken, ProductController.update) // Protegida
+        app.delete('/product/:id', validToken, ProductController.delete) // Protegida
+    // ...
+```
+
+Pronto! Agora você não conseguirá acessar essas rotas sem informar o token de acesso!
+
+# IMAGEM UNAUTHORIZED E TUDO CERTO DEPOIS
+
+### 5.2. Armazenamento de senhas e criação de tokens
+
+Outra coisa importantíssima quando pensamos na segurança da nossa aplicação, além de restringir acesso, é como armazenamos informações sensíveis. Uma delas é a senha, um dado que se for vazado pode gerar muitos problemas. Por isso vamos fazer um processo de *hashing* com a senha do usuário: Vamos jogá-la em um liquidificador e transformar em um dado que não pode ser revertido à senha original. Em compensação, se quisermos comparar duas senhas, precisaremos também jogar essa senha no liquidificador e ver se o resultado processado é o mesmo. Isso reduz bastante a chance de vazamento de senhas, pois quem tentar descobrir uma senha "liquidificada" precisaria tentar milhões de combinações sem chegar a nenhum resultado.
+
+A versão de "liquidificador" (*hashing*) que vamos usar é a `bcrypt`. Ele fornece funções de encriptação e de comparação de valores de forma segura.
+
+No seed vamos armazenar a senha de usuário de forma processada:
+
+`scripts/seed.js`
+```js
+// Fora da função...
+import { hashSync } from "bcrypt"
+
+// Dentro da função...
+    // ...
+    admin.email = "admin@case2.com"
+    admin.encryptedPassword = hashSync('12345678', 10)
+    const users = [admin]
+    // ...
+```
+
+Isso fará com que a senha do usuário seja transformada de '12345678' para um valor liquidificado 10 vezes para garantir a irreversibilidade da informação.
+
+Se você rodar `npm run clear` e `npm run seed` verá que a senha agora está ilegível
+
+# foto eeee
+
+Agora, precisamos fazer essa comparação de senhas no login. Por sorte, a biblioteca fornece uma função para fazer exatamente isso:
+
+`src/controller/UserController.js`
+```js
+// Fora da classe...
+import { compareSync } from "bcrypt"
+// ...
+
+// Dentro da classe...
+        // ...
+        const passwordsMatch = compareSync(password, user.encryptedPassword)
+        if (!passwordsMatch) {
+        // ...
+```
+
+Para finalizar o projeto, não podemos deixar um token tão simples como esse. A ideia do token é criar um crachá único para cada usuário e atualmente todos os usuários teriam o mesmo token cadastrado ('fedcba'). Vamos utilizar uma função do próprio JavaScript que gera um identificador único para o nosso token:
+
+`src/controller/UserController.js`
+```js
+// Fora da classe...
+// ...
+import { randomUUID } from "crypto"
+// ...
+
+// Dentro da classe...
+        // ...
+        user.authToken = randomUUID()
+        await user.save()
+        // ...
+```
+
+# foto do token bonito
+
+Maravilha, agora seu projeto está finalizado 😉! Espero que tenha aprendido algo novo!
