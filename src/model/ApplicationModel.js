@@ -62,7 +62,7 @@ export default class ApplicationModel {
         throw new Error('Você deve criar sua própria versão de SuaModel.init()! Dentro dela chame o método "SuaModel.correlate" para relacionar as propriedades da model com as colunas do banco!')
     }
 
-    static correlate( property, column ) {
+    static associate( property, column ) {
         this._propertyToColumn.set(property, column)
         this._columnToProperty.set(column, property)
     }

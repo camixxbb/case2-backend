@@ -4,8 +4,8 @@ export default class Product extends ApplicationModel {
     id; title; description;
 
     static init() {
-        Product.correlate('id', 'ID')
-        Product.correlate('title', 'TITLE')
-        Product.correlate('description', 'DESCRIPTION')
+        Product.associate('id', 'ID')
+        Product.associate('title', 'TITLE')
+        Product.associate('description', 'DESCRIPTION')
     }
 }

@@ -4,9 +4,9 @@ export default class User extends ApplicationModel {
     id; email; encryptedPassword; authToken;
 
     static init() {
-        User.correlate('id', 'ID')
-        User.correlate('email', 'EMAIL')
-        User.correlate('encryptedPassword', 'ENCRYPTED_PASSWORD')
-        User.correlate('authToken', 'AUTH_TOKEN')
+        User.associate('id', 'ID')
+        User.associate('email', 'EMAIL')
+        User.associate('encryptedPassword', 'ENCRYPTED_PASSWORD')
+        User.associate('authToken', 'AUTH_TOKEN')
     }
 }
