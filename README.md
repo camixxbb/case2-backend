@@ -794,7 +794,7 @@ Pronto! Agora é só rodar
 
 Recomendo instalar a extensão [SQLite](https://marketplace.visualstudio.com/items?itemName=alexcvzz.vscode-sqlite) do VSCode para explorar as tabelas criadas. Após executar `npm run migrate`, clique com o botão direito do mouse em cima do arquivo `db.sqlite` e clique em `Open Database`. O VSCode abrirá o `SQLITE EXPLORER` e você poderá verificar que as suas tabelas estão com as colunas configuradas corretamente.
 
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI
+![image](https://user-images.githubusercontent.com/28551993/217203449-f8762b29-b555-4f72-bedc-a678d70de562.png)
 
 ### 4.3.2. Métodos de instância
 
@@ -952,9 +952,9 @@ Agora, adicione no campo `"script"` do seu `package.json` mais uma propriedade:
 
 Pronto! Agora só executar `npm run seed` e ver que os dados foram populados nas tabelas!
 
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI page
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI product
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI user
+![image](https://user-images.githubusercontent.com/28551993/217203700-acfdf78f-5633-430a-8953-51ed3e218217.png)
+![image](https://user-images.githubusercontent.com/28551993/217203745-da6e788b-135d-4ea7-b718-7dfaa1a4d68f.png)
+![image](https://user-images.githubusercontent.com/28551993/217203795-9889d505-8db5-4009-9786-8f43b071cf18.png)
 
 ### 4.3.3. Integração da primeira rota de produtos na controller
 
@@ -984,11 +984,11 @@ Vamos alterar o método `create` do arquivo `src/controller/ProductController.js
 
 Vamos executar um `npm run clear` e um `npm run seed` para garantirmos um ambiente inicial de 10 produtos. Depois disso, vamos executar um POST para a rota de criação de produtos:
 
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO INSOMNIA AQUI
+![image](https://user-images.githubusercontent.com/28551993/217204110-7e6a7d1f-ef81-4b31-9c03-9febde290de9.png)
 
 E agora no explorer:
 
-# LEMBRETE PARA O GABRIEL DO FUTURO INSERIR UMA IMAGEM DO EXPLORER AQUI
+![image](https://user-images.githubusercontent.com/28551993/217204165-ea44a697-839e-406d-9811-fc7222adcf3b.png)
 
 Maravilha! Agora vamos ver como podemos buscar os dados com as nossas models!
 
@@ -1257,7 +1257,10 @@ import { validToken } from "../middleware/authorization.js"
 
 Pronto! Agora você não conseguirá acessar essas rotas sem informar o token de acesso!
 
-# IMAGEM UNAUTHORIZED E TUDO CERTO DEPOIS
+![image](https://user-images.githubusercontent.com/28551993/217204467-ad153032-b121-4d62-abb9-9a092aa6fee2.png)
+![image](https://user-images.githubusercontent.com/28551993/217204587-dbe8d1a0-044b-450d-9830-8a45583487be.png)
+![image](https://user-images.githubusercontent.com/28551993/217205081-10bc85aa-b0ba-4433-8e56-93a56e82be20.png)
+
 
 ### 5.2. Armazenamento de senhas e criação de tokens
 
@@ -1284,7 +1287,7 @@ Isso fará com que a senha do usuário seja transformada de '12345678' para um v
 
 Se você rodar `npm run clear` e `npm run seed` verá que a senha agora está ilegível
 
-# foto eeee
+![image](https://user-images.githubusercontent.com/28551993/217205224-83b881d9-5d7c-4046-8e66-55f927c1e7d8.png)
 
 Agora, precisamos fazer essa comparação de senhas no login. Por sorte, a biblioteca fornece uma função para fazer exatamente isso:
 
@@ -1317,6 +1320,6 @@ import { randomUUID } from "crypto"
         // ...
 ```
 
-# foto do token bonito
+![image](https://user-images.githubusercontent.com/28551993/217205398-0c0dcf82-b483-429d-9e3a-7cd842ef91f3.png)
 
 Maravilha, agora seu projeto está finalizado 😉! Espero que tenha aprendido algo novo!
