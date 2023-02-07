@@ -398,6 +398,72 @@ Caso escolha a opção 2, continue seguindo este passo 4!
 
 ### Model genérica
 
+Uma das vantagens de usar ORMs é que eles deixam a maior parte da carga pesada em uma classe geral, a qual será herdada por outras classes que poderão usar seus métodos de forma customizada. O primeiro exemplo que vamos montar é de como encontrar, de acordo com a model que estamos usando, qual o nome da tabela em que guardaremos seus dados.
+
+> Dica: Utilizaremos tanto métodos **estáticos** quanto métodos **de instância**. Em ambos contextos a palavra chave *this* significará **coisas diferentes**. Revisaremos isso abaixo, mas é importante que você se atente a qual tipo de método estaremos usando e por quê.
+
+Como métodos estáticos não pertencem a uma instância em específico, elas não dependem da existência de uma instância para serem executados. No fundo, elas são funções como quaisquer outras, mas organizadas em um contexto diferente. Geralmente métodos estáticos são usados para criar instâncias daquela classe (agem como uma função *factory*), fazem buscas ou processam algum tipo de dado relacionado àquela classe. Alguns exemplos de métodos estáticos:
+```js
+const milliseconds = Date.now() // Devolve o número de milissegundos passados a partir do início dos relógios dos computadores (não precisa que uma data exista para ser chamado)
+const letter = String.fromCharCode(65) // Cria uma string a partir de um código UTF8 (não precisa que uma string exista para ser chamado)
+const number = Math.random() // Devolve um número aleatório entre 0 e 1. Não existem objetos do tipo Math, mas as funções matemáticas são organizadas dentro deste contexto
+```
+
+Alguns exemplos de métodos de instância:
+```js
+const yelling = 'hello'.toUpperCase() // Devolve a string em letras maiúsculas (precisa que uma string exista para ser chamado)
+const today = new Date()
+const year = today.getFullYear() // Devolve o ano de uma data (precisa que um objeto do tipo Date exista para ser chamado)
+```
+
+Com essa revisão rápida de métodos estáticos, vamos criar nossa model genérica: Ela representará uma entidade (tabela) no nosso banco de dados. Crie o arquivo `src/model/ApplicationModel.js` com o conteúdo abaixo:
+```js
+export default class ApplicationModel {
+    static getTableName() {
+        return this.name.toLowerCase()
+    }
+}
+```
+
+> Dica: No exemplo acima, a palavra chave *this* referencia a classe construtora pois estamos em um método estático e não uma instância dessa classe. Desta forma, como classes são do tipo "function", elas possuem a propriedade "name" que permite acessar o nome da classe
+
+Agora, crie as outras 3 models do nosso projeto (página, produto e usuário) nos seguintes arquivos:
+`src/model/Page.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class Page extends ApplicationModel {
+
+}
+```
+
+`src/model/Product.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class Product extends ApplicationModel {
+
+}
+```
+
+`src/model/User.js`
+```js
+import ApplicationModel from "./ApplicationModel"
+
+export default class User extends ApplicationModel {
+
+}
+```
+
+Desta forma, cada model terá um nome diferente para sua tabela!
+```js
+Page.getTableName() // "page"
+Product.getTableName() // "product"
+User.getTableName() // "user"
+```
+
+> Por que `User.getTableName()` retorna `"user"` e não `"applicationmodel"` já que o método foi declarado na classe `ApplicationModel`? É porque estamos tirando vantagem do **polimorfismo**: uma classe filha pode sobrescrever os comportamentos de uma classe mãe. No JavaScript isso também significa que se uma classe filha chama métodos de uma classe mãe, as chamadas para *this* vão referenciar a classe filha, pois é ela que está executando os métodos! Desta forma, o método `.getTableName()` está sendo executado por `User` e o código acaba sendo traduzido para `return User.name.toLowerCase()` naquela linha de código. Esse é a base fundamental para os comportamentos que montaremos na nossa model.
+
 ## 5. Autenticação e autorização
 
 
